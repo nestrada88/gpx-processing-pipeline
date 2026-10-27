@@ -23,3 +23,18 @@ __all__ = [
     "parse_gpx",
     "serialize_gpx",
 ]
+
+from .spatial import (
+    SpatialFinding,
+    SpatialOptions,
+    SpatialResult,
+    geodesic_distance_m,
+    validate_spatial,
+)
+__all__ += [
+    "SpatialFinding",
+    "SpatialOptions",
+    "SpatialResult",
+    "geodesic_distance_m",
+    "validate_spatial",
+]
