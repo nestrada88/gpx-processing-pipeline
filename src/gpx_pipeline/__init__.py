@@ -38,3 +38,20 @@ __all__ += [
     "geodesic_distance_m",
     "validate_spatial",
 ]
+
+from .dem import (
+    DEMError,
+    DEMOptions,
+    DEMProvenance,
+    DEMResult,
+    DEMSample,
+    enrich_dem,
+)
+__all__ += [
+    "DEMError",
+    "DEMOptions",
+    "DEMProvenance",
+    "DEMResult",
+    "DEMSample",
+    "enrich_dem",
+]
