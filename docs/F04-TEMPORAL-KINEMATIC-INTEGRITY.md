@@ -20,13 +20,12 @@ from gpx_pipeline import (
 )
 
 result: TemporalResult = analyze_temporal(
-    document: GPXDocument,
-    *,
-    options: TemporalOptions = TemporalOptions(),
+    document,
+    options=TemporalOptions(),
 )
 ```
 
-The function annotation above is conceptual: its actual signature is `analyze_temporal(document: GPXDocument, *, options: TemporalOptions = TemporalOptions()) -> TemporalResult`. The input must pass `validate_spatial(document).valid`, otherwise `TemporalError("F02 spatial validation failed")` is raised.
+The actual function signature is `analyze_temporal(document: GPXDocument, *, options: TemporalOptions = TemporalOptions()) -> TemporalResult`. The input must pass `validate_spatial(document).valid`, otherwise `TemporalError("F02 spatial validation failed")` is raised.
 
 ### Configuration
 
