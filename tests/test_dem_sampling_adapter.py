@@ -137,9 +137,7 @@ def test_missing_units_rejected(tmp_path):
 
 def test_missing_crs_rejected(tmp_path):
     """Reject ambiguous raster coordinate metadata."""
-    path = make_dem(tmp_path)
-    with rasterio.open(path, "r+") as raster:
-        raster.crs = None
+    path = make_dem(tmp_path, crs=None)
     _, data = source([[(.995, .001)]])
     with pytest.raises(DEMError, match="CRS"):
         sample_terrain_from_dem(data, path)
