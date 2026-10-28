@@ -148,3 +148,19 @@ def test_bundle_integrity_detects_mutation(monkeypatch):
     monkeypatch.setattr(production_schemas, "_schema_bytes", corrupted)
     with pytest.raises(ProductionSchemaError, match="integrity"):
         _compile_schemas()
+
+
+def test_production_schemas_integrate_with_f07_export_verification():
+    """Use bundled real XSDs for F07 source/export compatibility evidence."""
+    from gpx_pipeline.garmin_export import export_garmin_navigation
+    from gpx_pipeline.production_schemas import verify_production_garmin_export
+
+    doc = gpx(
+        '<trk><trkseg><trkpt lat="12" lon="-86"/>'
+        '<trkpt lat="12.1" lon="-86.1"/></trkseg></trk>'
+    )
+    exported = export_garmin_navigation(doc)
+    report = verify_production_garmin_export(doc, exported)
+    assert report.schema_validated
+    assert report.software_status == "validated"
+    assert not report.physical_device_verified
