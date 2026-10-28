@@ -55,3 +55,24 @@ __all__ += [
     "DEMSample",
     "enrich_dem",
 ]
+
+from .terrain import (
+    ProfilePoint,
+    SurfaceMetrics,
+    TerrainError,
+    TerrainFinding,
+    TerrainResult,
+    TerrainSegment,
+    analyze_dem_surface,
+    analyze_terrain,
+)
+__all__ += [
+    "ProfilePoint",
+    "SurfaceMetrics",
+    "TerrainError",
+    "TerrainFinding",
+    "TerrainResult",
+    "TerrainSegment",
+    "analyze_dem_surface",
+    "analyze_terrain",
+]
