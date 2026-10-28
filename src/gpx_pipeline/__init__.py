@@ -196,3 +196,22 @@ __all__ += [
     "forecast_activity",
     "tobler_speed_kmh",
 ]
+
+from .terrain_sampling import (
+    SampledPoint,
+    SampledSegment,
+    SamplingError,
+    SamplingOptions,
+    SamplingResult,
+    terrain_adaptive_sample,
+    terrain_sampling_json,
+)
+__all__ += [
+    "SampledPoint",
+    "SampledSegment",
+    "SamplingError",
+    "SamplingOptions",
+    "SamplingResult",
+    "terrain_adaptive_sample",
+    "terrain_sampling_json",
+]
