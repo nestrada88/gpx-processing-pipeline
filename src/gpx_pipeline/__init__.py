@@ -150,3 +150,24 @@ __all__ += [
     "analyze_route",
     "route_analysis_json",
 ]
+
+from .planned_recorded import (
+    CheckpointProximity,
+    ComparisonError,
+    ComparisonOptions,
+    OffRouteEvent,
+    PlannedRecordedResult,
+    PointMatch,
+    compare_planned_recorded,
+    planned_recorded_json,
+)
+__all__ += [
+    "CheckpointProximity",
+    "ComparisonError",
+    "ComparisonOptions",
+    "OffRouteEvent",
+    "PlannedRecordedResult",
+    "PointMatch",
+    "compare_planned_recorded",
+    "planned_recorded_json",
+]
