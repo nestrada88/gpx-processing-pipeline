@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from hashlib import sha256
+import json
 from pathlib import Path
 
 from .activity_forecasting import (
@@ -17,6 +18,7 @@ from .garmin_compatibility import (
 )
 from .garmin_export import NavigationExportOptions, export_garmin_navigation
 from .interoperability import GPXLimits, parse_gpx
+from .operational_verification import verify_device_readiness
 from .output import OutputError, publish_outputs
 from .pipeline_config import PipelineConfig
 from .planned_recorded import compare_planned_recorded, planned_recorded_json
@@ -163,6 +165,19 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
                         + ", ".join(f.code for f in verified.findings
                                     if f.severity == "error"),
                     )
+                readiness = verify_device_readiness(document, export)
+                if not readiness.software_compatible:
+                    raise PipelineError(
+                        "GARMIN_INCOMPATIBLE",
+                        f"{device}: operational device limits failed: "
+                        + ", ".join(f.code for f in readiness.findings
+                                    if f.severity == "error"),
+                    )
+                artifacts[f"verification/{device}-operational.json"] = (
+                    json.dumps(asdict(readiness), sort_keys=True,
+                               ensure_ascii=False, separators=(",", ":"))
+                    + "\n"
+                ).encode("utf-8")
                 artifacts[f"navigation/{device}.gpx"] = export.gpx
                 artifacts[f"navigation/{device}-manifest.json"] = export.manifest()
                 artifacts[f"verification/{device}.json"] = garmin_verification_json(
