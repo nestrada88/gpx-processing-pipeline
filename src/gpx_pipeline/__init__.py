@@ -127,3 +127,26 @@ __all__ += [
     "analytical_json",
     "build_analytical_dataset",
 ]
+
+from .route_analysis import (
+    CheckpointAssociation,
+    GradeDistribution,
+    RouteAnalysisError,
+    RouteAnalysisOptions,
+    RouteAnalysisResult,
+    RouteSegmentSummary,
+    RouteStatistics,
+    analyze_route,
+    route_analysis_json,
+)
+__all__ += [
+    "CheckpointAssociation",
+    "GradeDistribution",
+    "RouteAnalysisError",
+    "RouteAnalysisOptions",
+    "RouteAnalysisResult",
+    "RouteSegmentSummary",
+    "RouteStatistics",
+    "analyze_route",
+    "route_analysis_json",
+]
