@@ -126,7 +126,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
             if config.forecast:
                 settings = ForecastOptions(
                     missing_grade=(
-                        "assumed" if config.assume_flat_grade else "unavailable"
+                        "assume" if config.assume_flat_grade else "unavailable"
                     ),
                 )
                 artifacts["analytical/activity-forecast.json"] = activity_forecast_json(
