@@ -215,3 +215,14 @@ __all__ += [
     "terrain_adaptive_sample",
     "terrain_sampling_json",
 ]
+
+from .dem_sampling_adapter import (
+    DEMSamplingResult,
+    dem_sampling_json,
+    sample_terrain_from_dem,
+)
+__all__ += [
+    "DEMSamplingResult",
+    "dem_sampling_json",
+    "sample_terrain_from_dem",
+]
