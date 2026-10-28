@@ -176,7 +176,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
                 artifacts[f"verification/{device}-operational.json"] = (
                     json.dumps(asdict(readiness), sort_keys=True,
                                ensure_ascii=False, separators=(",", ":"))
-                    + "\\n"
+                    + "\n"
                 ).encode("utf-8")
                 artifacts[f"navigation/{device}.gpx"] = export.gpx
                 artifacts[f"navigation/{device}-manifest.json"] = export.manifest()
