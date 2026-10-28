@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha1, sha256
 from importlib.resources import files
-from io import BytesIO
 from pathlib import Path
 
 from lxml import etree
@@ -69,7 +68,7 @@ def _compile_schemas() -> dict[str, etree.XMLSchema]:
         except (OSError, FileNotFoundError) as exc:
             raise ProductionSchemaError(f"Missing bundled schema: {name}") from exc
         git_blob = sha1(
-            f"blob {len(data)}\\0".encode("ascii") + data
+            f"blob {len(data)}\0".encode("ascii") + data
         ).hexdigest()
         if git_blob != expected_git_blob:
             raise ProductionSchemaError(f"Schema integrity mismatch: {name}")
