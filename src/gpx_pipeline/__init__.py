@@ -226,3 +226,28 @@ __all__ += [
     "dem_sampling_json",
     "sample_terrain_from_dem",
 ]
+
+from .garmin_export import (
+    ETREX_SE,
+    INSTINCT_2X_TACTICAL,
+    GarminCompatibilityFinding,
+    GarminDeviceProfile,
+    GarminExportError,
+    NavigationExportOptions,
+    NavigationExportResult,
+    NavigationGeometryAudit,
+    export_garmin_navigation,
+    export_garmin_pair,
+)
+__all__ += [
+    "ETREX_SE",
+    "INSTINCT_2X_TACTICAL",
+    "GarminCompatibilityFinding",
+    "GarminDeviceProfile",
+    "GarminExportError",
+    "NavigationExportOptions",
+    "NavigationExportResult",
+    "NavigationGeometryAudit",
+    "export_garmin_navigation",
+    "export_garmin_pair",
+]
