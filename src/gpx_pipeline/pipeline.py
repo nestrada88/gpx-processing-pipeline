@@ -17,7 +17,7 @@ from .garmin_compatibility import (
 )
 from .garmin_export import NavigationExportOptions, export_garmin_navigation
 from .interoperability import GPXLimits, parse_gpx
-from .output import publish_outputs
+from .output import OutputError, publish_outputs
 from .pipeline_config import PipelineConfig
 from .planned_recorded import compare_planned_recorded, planned_recorded_json
 from .production_schemas import (
@@ -165,7 +165,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
         paths = publish_outputs(
             config.output_dir, artifacts, command=config.command, inputs=inputs
         )
-    except OSError as exc:
+    except (OSError, OutputError) as exc:
         raise PipelineError("OUTPUT_FAILED", str(exc)) from exc
     return PipelineResult(
         config.command, config.output_dir, paths, tuple(sorted(inputs.items()))
