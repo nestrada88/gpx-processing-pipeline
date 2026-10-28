@@ -80,6 +80,15 @@ def _read_document(path: Path, limit: int):
     return document
 
 
+def _hash_local_file(path: Path) -> str:
+    """Hash potentially large local rasters without unbounded byte buffering."""
+    digest = sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def _dataset(document, dem_path=None):
     """Assemble immutable source data and optional raster-derived DEM values."""
     catalog = enrich_waypoints(document)
@@ -112,7 +121,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineResult:
             dataset = _dataset(document, config.dem_path)
             if config.dem_path is not None:
                 try:
-                    inputs["dem"] = sha256(config.dem_path.read_bytes()).hexdigest()
+                    inputs["dem"] = _hash_local_file(config.dem_path)
                 except OSError as exc:
                     raise PipelineError("INPUT_UNAVAILABLE", str(exc)) from exc
             artifacts["analytical/dataset.json"] = analytical_json(dataset)
