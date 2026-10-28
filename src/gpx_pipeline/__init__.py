@@ -274,3 +274,18 @@ __all__ += [
     "garmin_verification_json",
     "verify_garmin_export",
 ]
+
+from .production_schemas import (
+    ProductionSchemaError,
+    ProductionSchemaResult,
+    production_schema_registry,
+    validate_production_gpx,
+    verify_production_garmin_export,
+)
+__all__ += [
+    "ProductionSchemaError",
+    "ProductionSchemaResult",
+    "production_schema_registry",
+    "validate_production_gpx",
+    "verify_production_garmin_export",
+]
