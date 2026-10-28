@@ -82,7 +82,7 @@ def schema(tmp_path):
 
 def test_exact_geometry_hash_and_manifest_references():
     """All source and export fingerprints are cross-checked."""
-    source = gpx(two_segments=True)
+    source = gpx(track_points=3, two_segments=True)
     report = run(source)
     assert report.geometry.exact_coordinate_and_segment_match
     assert report.geometry.exact_waypoint_xml_match
@@ -160,7 +160,7 @@ def test_explore_import_as_tracks_applies_to_routes():
 
 def test_multisegment_track_conversion_is_unverified():
     """Explore route conversion may not preserve original track segmentation."""
-    report = run(gpx(two_segments=True), workflow="explore-web-routes")
+    report = run(gpx(track_points=3, two_segments=True), workflow="explore-web-routes")
     assert report.software_status == "unverified"
     assert "SEGMENT_TO_ROUTE_CONVERSION_UNVERIFIED" in {
         f.code for f in report.findings
