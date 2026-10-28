@@ -76,3 +76,22 @@ __all__ += [
     "analyze_dem_surface",
     "analyze_terrain",
 ]
+
+from .temporal import (
+    MovementEdge,
+    TemporalError,
+    TemporalFinding,
+    TemporalOptions,
+    TemporalResult,
+    TemporalSegment,
+    analyze_temporal,
+)
+__all__ += [
+    "MovementEdge",
+    "TemporalError",
+    "TemporalFinding",
+    "TemporalOptions",
+    "TemporalResult",
+    "TemporalSegment",
+    "analyze_temporal",
+]
