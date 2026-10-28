@@ -95,3 +95,18 @@ __all__ += [
     "TemporalSegment",
     "analyze_temporal",
 ]
+
+from .waypoints import (
+    WaypointCatalog,
+    WaypointCatalogEntry,
+    WaypointError,
+    WaypointFinding,
+    enrich_waypoints,
+)
+__all__ += [
+    "WaypointCatalog",
+    "WaypointCatalogEntry",
+    "WaypointError",
+    "WaypointFinding",
+    "enrich_waypoints",
+]
