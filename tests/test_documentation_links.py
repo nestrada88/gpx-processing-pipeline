@@ -21,8 +21,8 @@ FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 INLINE_CODE = re.compile(r"(`+)(.*?)\1")
 
 
-def _without_code(markdown: str) -> str:
-    """Exclude fenced and inline-code text from link analysis."""
+def _without_code(markdown: str, *, strip_inline: bool = True) -> str:
+    """Exclude fenced blocks; optionally strip inline code for link scans."""
     kept: list[str] = []
     fence_marker: str | None = None
     for line in markdown.splitlines():
@@ -36,7 +36,7 @@ def _without_code(markdown: str) -> str:
             continue
         if fence_marker is not None:
             continue
-        kept.append(INLINE_CODE.sub("", line))
+        kept.append(INLINE_CODE.sub("", line) if strip_inline else line)
     return "\n".join(kept)
 
 
@@ -57,7 +57,7 @@ def _headings(markdown: str) -> set[str]:
     """Collect heading IDs, including GitHub-style duplicate suffixes."""
     slugs: set[str] = set()
     counts: Counter[str] = Counter()
-    for line in _without_code(markdown).splitlines():
+    for line in _without_code(markdown, strip_inline=False).splitlines():
         m = ATX.match(line)
         if not m:
             continue
