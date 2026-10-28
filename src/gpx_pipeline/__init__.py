@@ -110,3 +110,20 @@ __all__ += [
     "WaypointFinding",
     "enrich_waypoints",
 ]
+
+from .analytical import (
+    AnalyticalDataset,
+    AnalyticalDatasetError,
+    AnalyticalPoint,
+    AnalyticalSegment,
+    analytical_json,
+    build_analytical_dataset,
+)
+__all__ += [
+    "AnalyticalDataset",
+    "AnalyticalDatasetError",
+    "AnalyticalPoint",
+    "AnalyticalSegment",
+    "analytical_json",
+    "build_analytical_dataset",
+]
