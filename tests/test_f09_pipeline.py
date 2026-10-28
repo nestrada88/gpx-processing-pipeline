@@ -169,3 +169,36 @@ def test_options_disallow_duplicate_devices(tmp_path):
             output_dir=tmp_path / "out",
             garmin_devices=("etrex-se", "etrex-se"),
         )
+
+
+def test_process_local_dem_and_adaptive_sampling(tmp_path):
+    """Exercise the complete F03 raster to F06 derived-output pathway."""
+    import numpy as np
+    import rasterio
+    from rasterio.transform import from_origin
+
+    source = gpx(tmp_path)
+    dem = tmp_path / "terrain.tif"
+    with rasterio.open(
+        dem, "w", driver="GTiff", width=16, height=16, count=1,
+        dtype="float32", crs="EPSG:4326",
+        transform=from_origin(-86.02, 12.02, .002, .002),
+        nodata=-9999,
+    ) as raster:
+        raster.write(np.full((16, 16), 100, dtype="float32"), 1)
+        raster.set_band_unit(1, "m")
+    output = tmp_path / "terrain-output"
+    assert main([
+        "process", str(source), "--dem", str(dem),
+        "--adaptive-sampling", "--output", str(output),
+    ]) == 0
+    dataset = json.loads((output / "analytical/dataset.json").read_bytes())
+    trackpoints = [p for p in dataset["points"] if p["kind"] == "track"]
+    assert all(p["dem_elevation_m"] == 100 for p in trackpoints)
+    derived = json.loads(
+        (output / "analytical/terrain-sampling.json").read_bytes()
+    )
+    assert len(derived["sampling"]["segments"][0]["points"]) > 2
+    assert derived["provenance"]["vertical_units"] == "m"
+    manifest = json.loads((output / "manifest.json").read_bytes())
+    assert manifest["inputs"]["dem"] == sha256(dem.read_bytes()).hexdigest()
