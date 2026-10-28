@@ -171,3 +171,28 @@ __all__ += [
     "compare_planned_recorded",
     "planned_recorded_json",
 ]
+
+from .activity_forecasting import (
+    ActivityForecastResult,
+    CheckpointETA,
+    ForecastEdge,
+    ForecastError,
+    ForecastOptions,
+    ForecastScenario,
+    ForecastSegment,
+    activity_forecast_json,
+    forecast_activity,
+    tobler_speed_kmh,
+)
+__all__ += [
+    "ActivityForecastResult",
+    "CheckpointETA",
+    "ForecastEdge",
+    "ForecastError",
+    "ForecastOptions",
+    "ForecastScenario",
+    "ForecastSegment",
+    "activity_forecast_json",
+    "forecast_activity",
+    "tobler_speed_kmh",
+]
