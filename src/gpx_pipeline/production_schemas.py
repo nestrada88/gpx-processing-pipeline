@@ -163,3 +163,40 @@ def production_schema_registry():
             if ns != GPX11_NAMESPACE
         },
     )
+
+
+def verify_production_garmin_export(
+    source: GPXDocument,
+    exported,
+    *,
+    options=None,
+):
+    """Verify both GPX artifacts with real bundled XSDs and F07 integrity.
+
+    Returns F07's compatibility report, which still flags physical device
+    transfer and Garmin software conversion as unverified.
+    """
+    from .garmin_compatibility import (
+        GarminCompatibilityOptions,
+        GarminSchemaRegistry,
+        verify_garmin_export,
+    )
+    # Do not allow F07's older per-element extension loop to substitute for
+    # this validator's proper root-level Garmin complex-type validation.
+    validate_production_gpx(source)
+    validate_production_gpx(parse_gpx_safe(exported.gpx))
+    registry = production_schema_registry()
+    return verify_garmin_export(
+        source, exported,
+        options=options or GarminCompatibilityOptions(),
+        schemas=GarminSchemaRegistry(
+            gpx11_xsd=registry.gpx11_xsd,
+            extensions={},
+        ),
+    )
+
+
+def parse_gpx_safe(payload: bytes) -> GPXDocument:
+    """Bound and securely parse generated GPX without optional XSD fallback."""
+    from .interoperability import parse_gpx
+    return parse_gpx(payload, strict=False)
