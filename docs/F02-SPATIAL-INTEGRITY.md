@@ -1,49 +1,198 @@
 # F02 — Spatial Integrity
 
-## Purpose
+## Purpose and scope
 
-Validate the spatial integrity of canonical GPX data emitted by F01 without changing source geometry. F02 supplies coordinate validation, segment-safe geometry diagnostics, and geodetic distance primitives for downstream domains.
+F02 performs **non-mutating spatial validation and WGS 84 horizontal geodesic
+distance calculation** on an F01 `GPXDocument`. It verifies coordinate and
+optional elevation numeric validity, reports nonfatal geometric anomalies, and
+preserves route, track and segment boundaries. It neither repairs coordinates
+nor reconstructs real trails.
 
-## Responsibilities
+**Implementation:** `src/gpx_pipeline/spatial.py`.
+**Public exports:** `src/gpx_pipeline/__init__.py`.
+**Tests:** `tests/test_f02_spatial.py` and
+`tests/integration/test_f01_f03_end_to_end.py`.
 
-- **F02-01 — Coordinate validation:** enforce latitude in [-90, 90], longitude in [-180, 180], and finite coordinates under WGS 84 geographic coordinates.
-- **F02-02 — Precision preservation:** retain canonical source coordinate values without rounding or truncation.
-- **F02-03 — Geometric integrity:** identify exact duplicate points, suspicious jumps, and discontinuities while keeping legitimate loops, switchbacks, and self-intersections valid.
-- **F02-04 — Segment integrity:** preserve track/segment structure and ordered point sequences; never create an implied edge between distinct segments.
-- **F02-05 — Geodesy:** calculate geodesic distances with an explicitly identified Earth model; cover antimeridian crossings and polar coordinates.
-- **F02-06 — Spatial diagnostics:** classify and locate anomalous displacements without inferring movement speed from spatial data alone.
-- **F02-07 — Source preservation:** guarantee validation is non-mutating.
-- **F02-08 — Deterministic findings:** identify track, segment, point, rule, severity, and relevant measurements consistently.
+## Responsibilities and invariants
 
-## Contracts
+- **F02-01 — Coordinate validity:** Latitude must be finite and in the closed
+  interval [-90, 90]; longitude must be finite and in [-180, 180], both
+  expressed as WGS 84 geographic degrees. Missing and nonnumeric attributes
+  are errors. No longitude wrapping, clipping, or repair is performed.
+- **F02-02 — Source preservation:** Original coordinate strings, their
+  lexical precision, element order and segment grouping remain unchanged.
+- **F02-03 — Geometric diagnostics:** Consecutive duplicate positions and
+  optionally long displacements produce warnings, not automatic rejection.
+  A loop, switchback or self-intersection is not automatically invalid.
+- **F02-04 — Segment isolation:** No computed distance joins two distinct GPX
+  track segments, tracks, or routes.
+- **F02-05 — Geodesy:** Horizontal path distances use the WGS 84 ellipsoid
+  through `geographiclib.geodesic.Geodesic.WGS84.Inverse`, in meters.
+- **F02-06 — Elevation validity:** The `ele` element may be absent; if
+  present, it must contain a finite decimal value. F02 does not interpret
+  vertical datum or calculate 3-D distance.
+- **F02-07 — Deterministic findings:** Rules and zero-based location indices
+  identify where an error or warning arose.
+- **F02-08 — No temporal inference:** F02 never estimates movement speed,
+  elapsed duration, pace, or ETA.
 
-1. Consume the canonical F01 representation. Do not add a parallel GPX parser or competing data model.
-2. Invalid coordinates are errors. Coordinate numeric values must be finite; no automatic longitude wrapping or coordinate repair.
-3. Missing elevation is permitted; when present it must be finite. Do not assume a GPX elevation is DEM-derived or in a known vertical datum without metadata.
-4. Repeated positions, self-intersections, loops, and significant point-to-point distances are not necessarily invalid. Emit configurable diagnostics where appropriate; do not silently discard route geometry.
-5. A segment break is never interpreted as a traveled edge. Geodesic distances must not bridge segments by default.
-6. Evaluation must not modify point count, point order, coordinate values, track grouping, or segment grouping.
-7. Distinguish geodesic horizontal distance from 3-D distance involving elevations, and do not combine unknown vertical datums.
-8. Findings must have stable rule identifiers and enough location context to reproduce the issue.
+## Input contract and public Python API
 
-## Excluded concerns
+The input to `validate_spatial` is an F01 `GPXDocument`. F02 uses
+`document.tree()` to read a detached GPX 1.1 XML tree. GPX 1.1 XSD
+validation is an F01/F08 concern; accepting a document into F02 does not
+prove prior XSD validation.
 
-- XML parsing and XSD checks (F01)
-- Densification, simplification, smoothing, or route reconstruction
-- DEM acquisition, terrain interpolation, and slope estimates
-- Chronology, speed, pacing, or ETA modeling
-- Garmin device export and navigation behavior
+| Interface | Implemented contract |
+| --- | --- |
+| `validate_spatial(document: GPXDocument, *, options: SpatialOptions = SpatialOptions()) -> SpatialResult` | Validate all top-level waypoints and track/route point sequences; calculate within-sequence horizontal edge distances |
+| `geodesic_distance_m(latitude_a: float, longitude_a: float, latitude_b: float, longitude_b: float) -> float` | Return WGS 84 inverse-geodesic distance in meters; invalid coordinate inputs raise `ValueError` |
+| `SpatialOptions(jump_warning_m: float \| None = None)` | Optional finite, strictly positive warning threshold in meters; by default no jump threshold applies |
+| `SpatialFinding` | Frozen record with `rule`, `severity`, `kind`, `index`, `segment`, `point`, `message` |
+| `SpatialResult` | Frozen record with `findings`, `distances_m`, and computed Boolean `valid` property |
 
-## Verification battery
+`SpatialOptions` rejects zero, negative, NaN and infinite non-null
+`jump_warning_m` values with `ValueError`.
 
-- Boundary and just-outside-boundary coordinates, finite/nonfinite values, absent elevations.
-- Coordinate precision and immutable geometry snapshots before/after validation.
-- Dateline crossings, same-position points, polar positions, closed loops, switchbacks, and self-intersections.
-- Multiple tracks and segments, including singleton and empty segments where permitted by the upstream canonical contract.
-- No implicit cross-segment distance, deterministic ordering of diagnostics, and repeated-run consistency.
-- Numerical comparison of geodesic distance against independent, identified reference cases.
-- Data-driven and property-based test generation for valid coordinates and invalid perturbations.
+## Output contract and ordering
 
-## Completion evidence
+`SpatialResult.findings` is a tuple of `SpatialFinding` records in traversal
+order: **waypoints first, then tracks/segments, then routes**. Multiple
+findings on one point may occur (for example, invalid coordinates and invalid
+elevation).
 
-F02 is implemented only once the listed responsibilities are present in code, integrated with F01, and supported by passing automated tests. This document establishes the working scope; it does not certify implementation or verification.
+`SpatialFinding.kind` is `"waypoint"`, `"track"`, or `"route"`.
+`index` is zero-based within its corresponding element kind; `segment`
+is zero-based for track segments, otherwise `None`; `point` is zero-based
+within that waypoint/track segment/route sequence. Waypoint findings use
+`point=0` and `index` for the waypoint's index.
+
+`SpatialResult.distances_m` is a tuple of tuples. Arrays appear in this
+order: **all track segments (track order, then segment order), followed by
+all routes (route order)**. Standalone waypoints contribute no distance array.
+Each sequence with `N` points contributes `max(N - 1, 0)` edges; an
+empty or singleton segment/route produces `()`.
+
+Every valid edge is a **horizontal geodesic distance in meters**, never a
+3-D path distance. If either coordinate endpoint of an edge is invalid, its
+distance value is `float("nan")`; no adjacent points are connected across
+the invalid endpoint. Consumers **must check `result.valid` before using
+the distances**. There is no extra edge spanning neighboring GPX segments.
+
+`SpatialResult.valid` is `True` exactly when no finding has
+`severity == "error"`. Warnings do not invalidate the result.
+
+## Implemented diagnostic rules
+
+| Rule | Severity | Trigger |
+| --- | --- | --- |
+| `SPATIAL_COORDINATE` | error | Latitude/longitude missing, invalid decimal, nonfinite or outside WGS 84 bounds |
+| `SPATIAL_ELEVATION` | error | Optional `ele` is present but cannot be interpreted as a finite decimal |
+| `SPATIAL_DUPLICATE` | warning | Valid adjacent coordinate positions have zero horizontal distance |
+| `SPATIAL_JUMP` | warning | Valid adjacent horizontal distance exceeds `options.jump_warning_m` when configured |
+
+The jump comparison uses **strictly greater than** (`>`). Duplicate
+positions produce `SPATIAL_DUPLICATE` and do not also produce a jump
+warning. Large displacements are not automatically invalid because they
+could be legitimate route geometry or data acquisition artifacts.
+
+F02 does **not** implement a general-purpose discontinuity classifier,
+self-intersection detector, positional uncertainty model, or route-point
+smoothing. Such behavior must not be inferred from the earlier verification
+requirements.
+
+## Usage
+
+```python
+from gpx_pipeline import (
+    SpatialOptions,
+    parse_gpx,
+    validate_spatial,
+)
+
+source = (
+    b'<gpx xmlns="http://www.topografix.com/GPX/1/1" '
+    b'version="1.1" creator="example">'
+    b'<trk><trkseg>'
+    b'<trkpt lat="0" lon="0"/>'
+    b'<trkpt lat="0" lon="1"/>'
+    b'</trkseg></trk></gpx>'
+)
+document = parse_gpx(source, strict=False)
+result = validate_spatial(
+    document,
+    options=SpatialOptions(jump_warning_m=200_000),
+)
+assert result.valid
+assert len(result.distances_m) == 1
+assert len(result.distances_m[0]) == 1
+```
+
+**Boundary of this example:** `parse_gpx(..., strict=False)` checks secure
+XML ingestion and the GPX root namespace, not full GPX XSD compliance. Use
+F08 production validation where strict structural schema enforcement is
+required.
+
+For direct geodesic measurement:
+
+```python
+from gpx_pipeline import geodesic_distance_m
+
+meters = geodesic_distance_m(0.0, 0.0, 0.0, 1.0)
+assert abs(meters - 111_319.49079327357) < 0.001
+```
+
+## Verification evidence
+
+Implemented regression cases in `tests/test_f02_spatial.py` cover:
+
+- WGS 84 coordinate boundaries, invalid latitude/longitude, NaN,
+  Infinity and malformed coordinate numbers.
+- Antimeridian shortest-arc distance and a numerical reference for one
+  equatorial degree (111,319.49079327357 m, tolerance 0.001 m).
+- Separate distance arrays for distinct track segments, including a
+  singleton segment.
+- Invalid intermediate coordinates producing NaN for both adjacent edges.
+- Duplicate-coordinate warnings, optional jump warnings, and rejection
+  of invalid jump thresholds.
+- Optional elevation finiteness checks, byte-for-byte nonmutation and
+  repeated-run determinism.
+- Direct `geodesic_distance_m` rejection of out-of-range/nonfinite inputs.
+
+The F01–F03 integration tests verify the spatial result participates in
+DEM/terrain processing without altering the input GPX snapshot.
+
+**Coverage qualification:** The earlier specification also called for
+property-based generation, explicit polar reference cases, multi-route
+stress cases and self-intersection/loop fixtures. Those are documented
+verification objectives, **not established as implemented tests** by the
+F02 test module. Documentation must not claim broader proof than exists.
+
+## Dependencies and excluded concerns
+
+F02 depends on F01's parsed GPX document and the `geographiclib` library.
+Downstream F03 and F06 use spatial measurements, but F02 does not:
+
+- Parse untrusted XML or validate GPX/Garmin XSD structure (F01/F08).
+- Alter geometry, point counts, precision or segment boundaries.
+- Densify, simplify or reconstruct tracks, or resolve actual trail geometry.
+- Sample DEM elevations or infer terrain slope and vertical datum (F03).
+- Validate timestamps or derive velocity and plausibility (F04).
+- Forecast walking time or generate Garmin navigation artifacts (F06/F07).
+
+## Implementation status
+
+**Implemented and merged into `main`.** F02 has an implementation module,
+regression tests, and F01–F03 integration coverage. The former
+`"implemented only once ..."` completion statement is a historical
+requirement, not the current repository status.
+
+## References
+
+- Implementation: `src/gpx_pipeline/spatial.py`
+- Public exports: `src/gpx_pipeline/__init__.py`
+- Regression tests: `tests/test_f02_spatial.py`
+- Integration tests: `tests/integration/test_f01_f03_end_to_end.py`
+- F01 documentation: [GPX Interoperability](domains/F01-gpx-interoperability.md)
+- Standard: https://www.topografix.com/gpx/1/1/
+- Geodesic reference: https://geographiclib.sourceforge.io/
