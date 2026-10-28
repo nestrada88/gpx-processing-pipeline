@@ -251,3 +251,26 @@ __all__ += [
     "export_garmin_navigation",
     "export_garmin_pair",
 ]
+
+from .garmin_compatibility import (
+    GarminCompatibilityOptions,
+    GarminCompatibilityResult,
+    GarminSchemaRegistry,
+    GarminVerificationError,
+    GarminVerificationFinding,
+    GeometryVerificationResult,
+    TransferCompatibilityResult,
+    garmin_verification_json,
+    verify_garmin_export,
+)
+__all__ += [
+    "GarminCompatibilityOptions",
+    "GarminCompatibilityResult",
+    "GarminSchemaRegistry",
+    "GarminVerificationError",
+    "GarminVerificationFinding",
+    "GeometryVerificationResult",
+    "TransferCompatibilityResult",
+    "garmin_verification_json",
+    "verify_garmin_export",
+]
