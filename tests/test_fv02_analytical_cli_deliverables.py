@@ -23,11 +23,11 @@ def _source(tmp_path):
         '<trk><name>Recorded</name>'
         '<trkseg><trkpt lat="12" lon="-86"><ele>87</ele>'
         '<time>2026-01-01T08:00:00Z</time></trkpt>'
-        '<trkpt lat="12" lon="-85.999"><ele>89</ele>'
+        '<trkpt lat="12" lon="-85.997"><ele>89</ele>'
         '<time>2026-01-01T08:01:00Z</time></trkpt></trkseg>'
         '<trkseg><trkpt lat="12.002" lon="-86"><ele>93</ele>'
         '<time>2026-01-01T08:03:00Z</time></trkpt>'
-        '<trkpt lat="12.002" lon="-85.999"><ele>94</ele>'
+        '<trkpt lat="12.002" lon="-85.997"><ele>94</ele>'
         '<time>2026-01-01T08:04:00Z</time></trkpt></trkseg>'
         '</trk></gpx>',
         encoding="utf-8",
