@@ -150,6 +150,10 @@ def enrich_dem(
         not isfinite(uncertainty_m) or uncertainty_m < 0
     ):
         raise ValueError("uncertainty_m must be finite and nonnegative")
+    if vertical_datum is not None and (
+        not isinstance(vertical_datum, str) or not vertical_datum.strip()
+    ):
+        raise ValueError("vertical_datum must be nonempty or None")
     spatial = validate_spatial(document)
     if not spatial.valid:
         raise DEMError("F02 spatial validation failed")
