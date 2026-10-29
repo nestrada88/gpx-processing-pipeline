@@ -1,6 +1,7 @@
 """FV-03 CLI-to-artifact comparison and independent Garmin export contracts."""
 
 from hashlib import sha256
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import shutil
@@ -53,7 +54,7 @@ def _gpx(path, coordinates, *, waypoint=True):
     )
     vertices = "".join(
         f'<trkpt lat="{lat}" lon="{lon}"><time>'
-        f'2026-01-01T08:{index:02d}:00Z</time></trkpt>'
+        f'{(datetime(2026, 1, 1, 8, tzinfo=timezone.utc) + timedelta(minutes=index)).strftime("%Y-%m-%dT%H:%M:%SZ")}</time></trkpt>'
         for index, (lat, lon) in enumerate(coordinates)
     )
     path.write_text(
