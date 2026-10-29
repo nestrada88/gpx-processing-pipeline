@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from hashlib import sha256
+import ctypes
 import json
+import sys
 import os
 from pathlib import Path, PurePosixPath
 import shutil
@@ -38,6 +40,35 @@ def manifest_bytes(
     ) + "\n").encode("utf-8")
 
 
+def _publish_without_replace(staging: Path, target: Path) -> None:
+    """Publish atomically only when the destination is absent.
+
+    Linux renameat2 with RENAME_NOREPLACE prevents a destination-creation
+    race. Windows rename refuses an existing destination. Other platforms
+    fail closed rather than risk replacing a competing directory.
+    """
+    if sys.platform == "linux":
+        try:
+            renameat2 = ctypes.CDLL(None, use_errno=True).renameat2
+        except AttributeError as exc:
+            raise OutputError("Atomic no-replace publication unavailable") from exc
+        renameat2.argtypes = [
+            ctypes.c_int, ctypes.c_char_p, ctypes.c_int,
+            ctypes.c_char_p, ctypes.c_uint,
+        ]
+        renameat2.restype = ctypes.c_int
+        result = renameat2(
+            -100, os.fsencode(staging), -100, os.fsencode(target), 1,
+        )
+        if result != 0:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error), str(target))
+    elif sys.platform == "win32":
+        staging.rename(target)
+    else:
+        raise OutputError("Atomic no-replace publication unavailable")
+
+
 def publish_outputs(
     destination: Path,
     artifacts: Mapping[str, bytes],
@@ -69,7 +100,10 @@ def publish_outputs(
     contents["manifest.json"] = manifest_bytes(
         contents, command=command, inputs=inputs,
     )
-    staging = Path(tempfile.mkdtemp(prefix=".gpx-stage-", dir=target.parent))
+    try:
+        staging = Path(tempfile.mkdtemp(prefix=".gpx-stage-", dir=target.parent))
+    except OSError as exc:
+        raise OutputError(f"Failed to create output staging: {exc}") from exc
     try:
         for relative, data in sorted(contents.items()):
             path = staging.joinpath(*PurePosixPath(relative).parts)
@@ -82,7 +116,7 @@ def publish_outputs(
                 raise OutputError(f"Output integrity failure: {relative}")
         if target.exists() or target.is_symlink():
             raise OutputError("Output destination appeared during staging")
-        staging.rename(target)
+        _publish_without_replace(staging, target)
         return tuple(sorted(contents))
     except (OSError, ValueError) as exc:
         if isinstance(exc, OutputError):
