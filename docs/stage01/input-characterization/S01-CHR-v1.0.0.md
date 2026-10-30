@@ -167,7 +167,7 @@ Required independent verification gates:
 - `S01-SCOPE-EXC-v1.0.0`: **APPROVED; unchanged**.
 - `S01-CHR-v1.0.0`: **APPROVED / BASELINED** (user decision, 2026-10-30).
 - `S01-CHR-VRF-v1.0.0`: **RECONCILED DRAFT / EXECUTION NOT STARTED**.
-- Source files, parser implementation, project repository, and empirical tests: **NOT INSPECTED**.
+- At definition approval, implementation and empirical tests were **NOT VERIFIED**. Subsequent repository inspection findings are recorded separately in `EXECUTION-READINESS.md`; no CHRV engine test execution has been established.
 - Stage 01: **OPEN**.
 
 **APPROVED by explicit user decision, 2026-10-30.** Transition to VERIFIED still requires implementation inspection and executed regression evidence. Publication of this document is not such evidence.
