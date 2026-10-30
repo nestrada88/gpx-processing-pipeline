@@ -137,7 +137,8 @@ def _new_feature(kind, number):
                 counts=Counter(), usable_pairs=0, elevation_pairs=0,
                 time_pairs=0, timed_geo_pairs=0, triples=0, last=None, last2=None,
                 contains_crossing=False, min_lat=None, max_lat=None,
-                min_lon=None, max_lon=None, min_time=None, max_time=None,
+                min_lon=None, max_lon=None, min_positive_lon=None,
+                max_negative_lon=None, min_time=None, max_time=None,
                 precision_digits=set(), unknown_zone_count=0, segment_sizes=[])
 
 
@@ -157,6 +158,10 @@ def _append_point(feature, point):
             time = point["time"]
             feature["min_time"] = time if feature["min_time"] is None else min(feature["min_time"], time)
             feature["max_time"] = time if feature["max_time"] is None else max(feature["max_time"], time)
+    if lon >= 0:
+        feature["min_positive_lon"] = lon if feature["min_positive_lon"] is None else min(feature["min_positive_lon"], lon)
+    else:
+        feature["max_negative_lon"] = lon if feature["max_negative_lon"] is None else max(feature["max_negative_lon"], lon)
     previous = feature["last"]
     if previous is not None:
         valid_edge = previous["coords"] != point["coords"]
@@ -328,6 +333,7 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
     node_count = 0
     fix_fields = set()
     descriptive_fields = Counter()
+    temporal_inventory = dict(min_time=None, max_time=None, precision=set(), missing_timezone=0)
     foreign_nodes = 0
     try:
         with _stream(source) as handle:
@@ -394,6 +400,15 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
                         current["name"] = (element.text or "").strip() or None
                 if is_core and local in ("trkpt", "rtept", "wpt"):
                     point = _point(element)
+                    if "time" in point["fields"]:
+                        temporal_inventory["precision"].add(point.get("time_precision_digits", 0))
+                        if point.get("time") is None:
+                            temporal_inventory["missing_timezone"] += 1
+                        else:
+                            instant = point["time"]
+                            lo, hi = temporal_inventory["min_time"], temporal_inventory["max_time"]
+                            temporal_inventory["min_time"] = instant if lo is None else min(lo, instant)
+                            temporal_inventory["max_time"] = instant if hi is None else max(hi, instant)
                     scope = {"trkpt": "track_points", "rtept": "route_points", "wpt": "waypoints"}[local]
                     inventory[scope] += 1
                     point_counters[scope]["points"] += 1
@@ -479,6 +494,7 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
             _triples=f["triples"], _contains_crossing=f["contains_crossing"],
             _latitude_extent=(f["min_lat"], f["max_lat"]),
             _longitude_extent=(f["min_lon"], f["max_lon"]),
+            _split_longitudes=(f["min_positive_lon"], f["max_negative_lon"]),
             _segment_sizes=tuple(f["segment_sizes"]),
             _time_min=f["min_time"], _time_max=f["max_time"],
             _time_precision=tuple(sorted(f["precision_digits"])),
@@ -487,7 +503,8 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
         if f["point_count"]:
             evidence = [f"latitude_range={f['_latitude_extent'][0]:.9f}..{f['_latitude_extent'][1]:.9f}"]
             if f["_contains_crossing"]:
-                evidence.append("longitude_extent=ANTIMERIDIAN_SPLIT_REQUIRED")
+                positive, negative = f["_split_longitudes"]
+                evidence.append(f"conservative_longitude_intervals=[{positive:.9f},180);[-180,{negative:.9f}]")
             else:
                 evidence.append(f"longitude_range={f['_longitude_extent'][0]:.9f}..{f['_longitude_extent'][1]:.9f}")
             report["diagnostics"].append(dict(code="COORDINATE_EXTENT", requirement_id="CHR-03",
@@ -505,6 +522,14 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
                              f"latest_comparable_time={f['_time_max'].isoformat()}"]
             report["diagnostics"].append(dict(code="TEMPORAL_COVERAGE", requirement_id="CHR-05",
                 severity="INFO", location=f["feature_id"], evidence=evidence))
+    if temporal_inventory["precision"]:
+        details = ["fractional_second_digits=" + ",".join(map(str, sorted(temporal_inventory["precision"]))),
+                   f"timezone_missing_count={temporal_inventory['missing_timezone']}"]
+        if temporal_inventory["min_time"] is not None:
+            details.extend([f"earliest_comparable_time={temporal_inventory['min_time'].isoformat()}",
+                            f"latest_comparable_time={temporal_inventory['max_time'].isoformat()}"])
+        report["diagnostics"].append(dict(code="DOCUMENT_TEMPORAL_INVENTORY",
+            requirement_id="CHR-05", severity="INFO", location=None, evidence=details))
     if descriptive_fields:
         report["diagnostics"].append(dict(code="DESCRIPTIVE_INVENTORY", requirement_id="CHR-07",
             severity="INFO", location=None,
