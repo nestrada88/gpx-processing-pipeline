@@ -118,6 +118,8 @@ def _point(element):
                 try:
                     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
                     data["time"] = parsed if parsed.tzinfo is not None else None
+                    data["time_precision_digits"] = len(re.search(r"T\d{2}:\d{2}:\d{2}\.(\d+)", value).group(1)) if re.search(r"T\d{2}:\d{2}:\d{2}\.(\d+)", value) else 0
+                    data["time_timezone_known"] = parsed.tzinfo is not None
                 except ValueError:
                     data["time"] = None
         if q.namespace == GPX11_NAMESPACE and q.localname == "extensions":
@@ -135,7 +137,8 @@ def _new_feature(kind, number):
                 counts=Counter(), usable_pairs=0, elevation_pairs=0,
                 time_pairs=0, timed_geo_pairs=0, triples=0, last=None, last2=None,
                 contains_crossing=False, min_lat=None, max_lat=None,
-                min_lon=None, max_lon=None)
+                min_lon=None, max_lon=None, min_time=None, max_time=None,
+                precision_digits=set(), unknown_zone_count=0, segment_sizes=[])
 
 
 def _append_point(feature, point):
@@ -146,6 +149,14 @@ def _append_point(feature, point):
         lo, hi = "min_" + key, "max_" + key
         feature[lo] = value if feature[lo] is None else min(feature[lo], value)
         feature[hi] = value if feature[hi] is None else max(feature[hi], value)
+    if "time" in point["fields"]:
+        feature["precision_digits"].add(point.get("time_precision_digits", 0))
+        if point.get("time") is None:
+            feature["unknown_zone_count"] += 1
+        else:
+            time = point["time"]
+            feature["min_time"] = time if feature["min_time"] is None else min(feature["min_time"], time)
+            feature["max_time"] = time if feature["max_time"] is None else max(feature["max_time"], time)
     previous = feature["last"]
     if previous is not None:
         valid_edge = previous["coords"] != point["coords"]
@@ -316,6 +327,7 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
     known_root_count = 0
     node_count = 0
     fix_fields = set()
+    descriptive_fields = Counter()
     foreign_nodes = 0
     try:
         with _stream(source) as handle:
@@ -353,6 +365,8 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
                         globals_["any_core_name"] = True
                     if is_core and local == "time":
                         globals_["any_core_time"] = True
+                    if is_core and local in ("name", "desc", "cmt", "src", "link", "type", "sym", "number", "keywords", "author", "copyright"):
+                        descriptive_fields[local] += 1
                     if is_core and local in ("fix", "sat", "hdop", "vdop", "pdop"):
                         fix_fields.add(local)
                     if is_core and local == "trk" and len(stack) == 2:
@@ -394,6 +408,8 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
                         while element.getprevious() is not None:
                             del parent[0]
                 elif is_core and local == "trkseg":
+                    if current is not None:
+                        current["segment_sizes"].append(segment_size)
                     if segment_size == 0:
                         inventory["empty_segments"] += 1
                     elif segment_size == 1:
@@ -433,12 +449,8 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
     except _SecurityInvalid as exc:
         return _failure(report, "XML_SECURITY", "CHR-01", "xml_status", exc)
     except _CoreInvalid as exc:
-        resource["xml_status"] = "PASS"
-        resource["resource_status"] = "PASS"
         return _failure(report, "GPX_COORDINATE_INVALID", "CHR-03", "gpx_xsd_status", exc)
     except _VendorInvalid as exc:
-        resource["xml_status"] = "PASS"
-        resource["resource_status"] = "PASS"
         return _failure(report, "RECOGNIZED_VENDOR_XSD_INVALID", "CHR-06", "vendor_status", exc)
     except etree.XMLSyntaxError as exc:
         field = "gpx_xsd_status" if resource["xml_status"] == "PASS" else "xml_status"
@@ -466,7 +478,11 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
             _timed_geo_pairs=f["timed_geo_pairs"],
             _triples=f["triples"], _contains_crossing=f["contains_crossing"],
             _latitude_extent=(f["min_lat"], f["max_lat"]),
-            _longitude_extent=(f["min_lon"], f["max_lon"])))
+            _longitude_extent=(f["min_lon"], f["max_lon"]),
+            _segment_sizes=tuple(f["segment_sizes"]),
+            _time_min=f["min_time"], _time_max=f["max_time"],
+            _time_precision=tuple(sorted(f["precision_digits"])),
+            _unknown_timezone_count=f["unknown_zone_count"]))
     for f in reported_features:
         if f["point_count"]:
             evidence = [f"latitude_range={f['_latitude_extent'][0]:.9f}..{f['_latitude_extent'][1]:.9f}"]
@@ -476,6 +492,23 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
                 evidence.append(f"longitude_range={f['_longitude_extent'][0]:.9f}..{f['_longitude_extent'][1]:.9f}")
             report["diagnostics"].append(dict(code="COORDINATE_EXTENT", requirement_id="CHR-03",
                 severity="INFO", location=f["feature_id"], evidence=evidence))
+    for f in reported_features:
+        if f["kind"] == "trk":
+            report["diagnostics"].append(dict(code="SEGMENT_BOUNDARIES", requirement_id="CHR-08",
+                severity="INFO", location=f["feature_id"],
+                evidence=["segment_point_counts=" + ",".join(map(str, f["_segment_sizes"]))]))
+        if f["coverage"]["time"]["present"]:
+            evidence = ["fractional_second_digits=" + ",".join(map(str, f["_time_precision"])),
+                        f"timezone_missing_count={f['_unknown_timezone_count']}"]
+            if f["_time_min"] is not None:
+                evidence += [f"earliest_comparable_time={f['_time_min'].isoformat()}",
+                             f"latest_comparable_time={f['_time_max'].isoformat()}"]
+            report["diagnostics"].append(dict(code="TEMPORAL_COVERAGE", requirement_id="CHR-05",
+                severity="INFO", location=f["feature_id"], evidence=evidence))
+    if descriptive_fields:
+        report["diagnostics"].append(dict(code="DESCRIPTIVE_INVENTORY", requirement_id="CHR-07",
+            severity="INFO", location=None,
+            evidence=[f"{key}={value}" for key, value in sorted(descriptive_fields.items())]))
     report["classification"] = _classify(reported_features, declared_profile)
     report["capabilities"] = _capabilities(reported_features, unknown_foreign)
     report["features"] = [{k: v for k, v in f.items() if not k.startswith("_")}
@@ -483,9 +516,13 @@ def characterize_gpx(source: bytes | Path, *, limits: GPXLimits = GPXLimits(),
     report["extensions"] = [dict(namespace_uri=ns, element_qname=f"{{{ns}}}{name}",
         occurrences=n, recognized=ns in schemas,
         source_reference=None) for (ns, name), n in sorted(foreign.items())]
+    elevation_count = sum(x["counts"]["ele"] for x in point_counters.values())
+    geoid_count = sum(x["counts"]["geoidheight"] for x in point_counters.values())
+    reference_details = ([f"geoidheight_count={geoid_count}; geoid model unverified"] if geoid_count
+                         else ["no vertical datum/model identified"] if elevation_count else [])
     report["reference_evidence"] = dict(horizontal_reference="WGS84_GPX11_CONVENTION",
-        vertical_reference="UNKNOWN" if sum(x["counts"]["ele"] for x in point_counters.values()) else "NOT_APPLICABLE",
-        geoid_model=None, evidence=[])
+        vertical_reference="UNKNOWN" if elevation_count else "NOT_APPLICABLE",
+        geoid_model=None, evidence=reference_details)
     report["provenance"] = dict(origin="UNKNOWN", basis=[], privacy_status="NOT_CERTIFIED")
     report["resource_metrics"] = dict(xml_element_count=node_count,
         vendor_extension_element_count=foreign_nodes, peak_memory_bytes=None,
