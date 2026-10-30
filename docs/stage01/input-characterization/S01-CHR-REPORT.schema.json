@@ -1,0 +1,1050 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gpx-study.example.invalid/schema/S01-CHR-REPORT-v1.0.0.json",
+  "title": "GPX-Study Stage 01 Characterization/Admission Result v1.0.0",
+  "description": "Approved functional contract; schema validity does not establish implementation or regression execution",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/characterization_report"
+    },
+    {
+      "$ref": "#/$defs/admission_failure_report"
+    }
+  ],
+  "$defs": {
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "eligible": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "present": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "valid": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "status": {
+          "enum": [
+            "COMPLETE",
+            "PARTIAL",
+            "ABSENT",
+            "INVALID",
+            "NOT_APPLICABLE",
+            "INDETERMINATE"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "eligible",
+        "present",
+        "valid",
+        "ratio",
+        "status",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "feature": {
+      "type": "object",
+      "properties": {
+        "feature_id": {
+          "type": "string",
+          "pattern": "^(trk|rte):[0-9]+$"
+        },
+        "kind": {
+          "enum": [
+            "trk",
+            "rte"
+          ]
+        },
+        "source_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "point_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "segment_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "has_usable_line": {
+          "type": "boolean"
+        },
+        "coverage": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_:-]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/coverage"
+          }
+        },
+        "matches": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "prefixItems": [
+            {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "const": "GPX-01"
+                },
+                "result": {
+                  "enum": [
+                    "MATCH",
+                    "PARTIAL",
+                    "NO_MATCH"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "profile",
+                "result",
+                "reasons"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "const": "GPX-02"
+                },
+                "result": {
+                  "enum": [
+                    "MATCH",
+                    "PARTIAL",
+                    "NO_MATCH"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "profile",
+                "result",
+                "reasons"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "const": "GPX-03"
+                },
+                "result": {
+                  "enum": [
+                    "MATCH",
+                    "PARTIAL",
+                    "NO_MATCH"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "profile",
+                "result",
+                "reasons"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "const": "GPX-04"
+                },
+                "result": {
+                  "enum": [
+                    "MATCH",
+                    "PARTIAL",
+                    "NO_MATCH"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "profile",
+                "result",
+                "reasons"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "profile": {
+                  "const": "GPX-05"
+                },
+                "result": {
+                  "enum": [
+                    "MATCH",
+                    "PARTIAL",
+                    "NO_MATCH"
+                  ]
+                },
+                "reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "profile",
+                "result",
+                "reasons"
+              ],
+              "additionalProperties": false
+            }
+          ],
+          "items": false
+        }
+      },
+      "required": [
+        "feature_id",
+        "kind",
+        "source_index",
+        "name",
+        "point_count",
+        "segment_count",
+        "has_usable_line",
+        "coverage",
+        "matches"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "source_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "encoding_declared": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "encoding_effective": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "namespace_uri": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gpx_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "creator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "source_sha256",
+        "bytes",
+        "encoding_declared",
+        "encoding_effective",
+        "namespace_uri",
+        "gpx_version",
+        "creator"
+      ],
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "contract_id": {
+          "const": "S01-CHR-v1.0.0"
+        },
+        "contract_status": {
+          "enum": [
+            "CANDIDATE",
+            "APPROVED"
+          ]
+        },
+        "implementation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "configuration_digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "evidence_status": {
+          "enum": [
+            "EXECUTED",
+            "ILLUSTRATIVE"
+          ]
+        }
+      },
+      "required": [
+        "contract_id",
+        "contract_status",
+        "implementation_id",
+        "configuration_digest",
+        "evidence_status"
+      ],
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirement_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "ERROR",
+            "WARNING",
+            "INFO",
+            "INDETERMINATE"
+          ]
+        },
+        "location": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "code",
+        "requirement_id",
+        "severity",
+        "location",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "admission": {
+      "type": "object",
+      "properties": {
+        "xml_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_EXECUTED"
+          ]
+        },
+        "gpx_xsd_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_EXECUTED"
+          ]
+        },
+        "vendor_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_APPLICABLE",
+            "INDETERMINATE",
+            "NOT_EXECUTED"
+          ]
+        },
+        "resource_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "NOT_EXECUTED"
+          ]
+        }
+      },
+      "required": [
+        "xml_status",
+        "gpx_xsd_status",
+        "vendor_status",
+        "resource_status"
+      ],
+      "additionalProperties": false
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "waypoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "routes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "route_points": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tracks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "track_segments": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "track_points": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "empty_segments": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "singleton_segments": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "waypoints",
+        "routes",
+        "route_points",
+        "tracks",
+        "track_segments",
+        "track_points",
+        "empty_segments",
+        "singleton_segments"
+      ],
+      "additionalProperties": false
+    },
+    "classification": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "SINGLE",
+            "MIXED",
+            "AMBIGUOUS",
+            "UNCLASSIFIED",
+            "DECLARED_CONFLICT"
+          ]
+        },
+        "resolved_profile": {
+          "anyOf": [
+            {
+              "enum": [
+                "GPX-01",
+                "GPX-02",
+                "GPX-03",
+                "GPX-04",
+                "GPX-05"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "declared_profile": {
+          "anyOf": [
+            {
+              "enum": [
+                "GPX-01",
+                "GPX-02",
+                "GPX-03",
+                "GPX-04",
+                "GPX-05"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "intent_basis": {
+          "enum": [
+            "DECLARED",
+            "CORROBORATED",
+            "UNKNOWN"
+          ]
+        },
+        "candidate_profiles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "GPX-01",
+              "GPX-02",
+              "GPX-03",
+              "GPX-04",
+              "GPX-05"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "status",
+        "resolved_profile",
+        "declared_profile",
+        "intent_basis",
+        "candidate_profiles",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "capability": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": [
+            "ELIGIBLE_FOR_VALIDATION",
+            "PARTIALLY_ELIGIBLE",
+            "UNAVAILABLE",
+            "INDETERMINATE"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "scope",
+        "prerequisites",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "namespace_entry": {
+      "type": "object",
+      "properties": {
+        "namespace_uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "element_qname": {
+          "type": "string",
+          "minLength": 1
+        },
+        "occurrences": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recognized": {
+          "type": "boolean"
+        },
+        "source_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "namespace_uri",
+        "element_qname",
+        "occurrences",
+        "recognized",
+        "source_reference"
+      ],
+      "additionalProperties": false
+    },
+    "reference_evidence": {
+      "type": "object",
+      "properties": {
+        "horizontal_reference": {
+          "const": "WGS84_GPX11_CONVENTION"
+        },
+        "vertical_reference": {
+          "enum": [
+            "KNOWN",
+            "UNKNOWN",
+            "CONFLICTING",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "geoid_model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "horizontal_reference",
+        "vertical_reference",
+        "geoid_model",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "enum": [
+            "EMPIRICAL",
+            "PROCESSED_EMPIRICAL",
+            "SYNTHETIC",
+            "HYBRID",
+            "UNKNOWN"
+          ]
+        },
+        "basis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "privacy_status": {
+          "enum": [
+            "NOT_CERTIFIED",
+            "INDETERMINATE"
+          ]
+        }
+      },
+      "required": [
+        "origin",
+        "basis",
+        "privacy_status"
+      ],
+      "additionalProperties": false
+    },
+    "resource_metrics": {
+      "type": "object",
+      "properties": {
+        "xml_element_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vendor_extension_element_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_memory_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "extension_payload_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "parser_mode": {
+          "enum": [
+            "STREAMING",
+            "FULL_TREE",
+            "NOT_RECORDED"
+          ]
+        }
+      },
+      "required": [
+        "xml_element_count",
+        "vendor_extension_element_count",
+        "peak_memory_bytes",
+        "extension_payload_bytes",
+        "parser_mode"
+      ],
+      "additionalProperties": false
+    },
+    "summary_evidence": {
+      "type": "object",
+      "properties": {
+        "metadata_present": {
+          "type": "boolean"
+        },
+        "any_core_name": {
+          "type": "boolean"
+        },
+        "any_core_time": {
+          "type": "boolean"
+        },
+        "segment_boundaries_preserved": {
+          "type": "boolean"
+        },
+        "antimeridian_status": {
+          "enum": [
+            "CROSSING",
+            "NO_CROSSING",
+            "INDETERMINATE",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "fix_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "temporal_comparability": {
+          "enum": [
+            "COMPARABLE",
+            "PARTIAL",
+            "INDETERMINATE",
+            "NO_TIMESTAMPS"
+          ]
+        },
+        "geodesic_line_suitable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "metadata_present",
+        "any_core_name",
+        "any_core_time",
+        "segment_boundaries_preserved",
+        "antimeridian_status",
+        "fix_fields",
+        "temporal_comparability",
+        "geodesic_line_suitable"
+      ],
+      "additionalProperties": false
+    },
+    "characterization_report": {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "report_version": {
+              "const": "1.0.0"
+            },
+            "run": {
+              "$ref": "#/$defs/run"
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "admission": {
+              "$ref": "#/$defs/admission"
+            },
+            "diagnostics": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/diagnostic"
+              }
+            },
+            "report_kind": {
+              "const": "CHARACTERIZATION"
+            },
+            "inventory": {
+              "$ref": "#/$defs/inventory"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/feature"
+              }
+            },
+            "field_coverage": {
+              "type": "object",
+              "properties": {
+                "track_points": {
+                  "type": "object",
+                  "propertyNames": {
+                    "pattern": "^[a-zA-Z][a-zA-Z0-9_:-]*$"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/$defs/coverage"
+                  }
+                },
+                "route_points": {
+                  "type": "object",
+                  "propertyNames": {
+                    "pattern": "^[a-zA-Z][a-zA-Z0-9_:-]*$"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/$defs/coverage"
+                  }
+                },
+                "waypoints": {
+                  "type": "object",
+                  "propertyNames": {
+                    "pattern": "^[a-zA-Z][a-zA-Z0-9_:-]*$"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/$defs/coverage"
+                  }
+                }
+              },
+              "required": [
+                "track_points",
+                "route_points",
+                "waypoints"
+              ],
+              "additionalProperties": false
+            },
+            "classification": {
+              "$ref": "#/$defs/classification"
+            },
+            "capabilities": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/capability"
+              }
+            },
+            "extensions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/namespace_entry"
+              }
+            },
+            "reference_evidence": {
+              "$ref": "#/$defs/reference_evidence"
+            },
+            "provenance": {
+              "$ref": "#/$defs/provenance"
+            },
+            "resource_metrics": {
+              "$ref": "#/$defs/resource_metrics"
+            },
+            "summary_evidence": {
+              "$ref": "#/$defs/summary_evidence"
+            }
+          },
+          "required": [
+            "report_version",
+            "run",
+            "source",
+            "admission",
+            "diagnostics",
+            "report_kind",
+            "inventory",
+            "features",
+            "field_coverage",
+            "classification",
+            "capabilities",
+            "extensions",
+            "reference_evidence",
+            "provenance",
+            "resource_metrics",
+            "summary_evidence"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "admission": {
+              "properties": {
+                "xml_status": {
+                  "const": "PASS"
+                },
+                "gpx_xsd_status": {
+                  "const": "PASS"
+                },
+                "resource_status": {
+                  "const": "PASS"
+                },
+                "vendor_status": {
+                  "enum": [
+                    "PASS",
+                    "NOT_APPLICABLE",
+                    "INDETERMINATE"
+                  ]
+                }
+              }
+            },
+            "source": {
+              "properties": {
+                "source_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "admission_failure_report": {
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "report_version": {
+              "const": "1.0.0"
+            },
+            "run": {
+              "$ref": "#/$defs/run"
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "admission": {
+              "$ref": "#/$defs/admission"
+            },
+            "diagnostics": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/diagnostic"
+              }
+            },
+            "report_kind": {
+              "const": "ADMISSION_FAILURE"
+            }          },
+          "required": [
+            "report_version",
+            "run",
+            "source",
+            "admission",
+            "diagnostics",
+            "report_kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "admission": {
+              "anyOf": [
+                {
+                  "properties": {
+                    "xml_status": {
+                      "const": "FAIL"
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "gpx_xsd_status": {
+                      "const": "FAIL"
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "vendor_status": {
+                      "const": "FAIL"
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "resource_status": {
+                      "const": "FAIL"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
